@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { VouchersService } from './vouchers.service';
 import { VouchersController } from './vouchers.controller';
-import { VoucherRepository } from './vouchers.repository';
+import { VouchersRepository } from './vouchers.repository';
 import { Voucher, VoucherSchema } from './voucher.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CategorysModule } from '../categories/categories.module';
@@ -12,7 +12,7 @@ import { CategorysModule } from '../categories/categories.module';
     CategorysModule,
   ],
   controllers: [VouchersController],
-  providers: [VouchersService, VoucherRepository],
-  exports: [VouchersService, VoucherRepository],
+  providers: [VouchersService, VouchersRepository],
+  exports: [VouchersService, VouchersRepository],
 })
 export class VouchersModule {}

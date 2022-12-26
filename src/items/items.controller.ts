@@ -26,7 +26,6 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/role.guard';
-import { IItems } from './entities/item.entity';
 import {
   BadRequestDto,
   ConFlictExceptionDto,
@@ -100,7 +99,7 @@ export class ItemsController {
   @ApiOkResponse({ type: ItemSwangger, description: 'return items' })
   @ApiBadRequestResponse({
     type: BadRequestDto,
-    description: 'Items not exist or id not format objId',
+    description: '',
   })
   @Get(':id')
   async findOne(@Param('id') id: string) {

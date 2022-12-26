@@ -1,12 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { Document } from 'mongoose';
+import { Document } from 'mongoose';
+import * as mongoosePaginate from 'mongoose-paginate-v2';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const mongooseAggregatePaginate = require('mongoose-aggregate-paginate-v2');
 
 export type VoucherDocument = Voucher & Document;
 
 @Schema({ timestamps: true })
 export class Voucher {
-  _id: mongoose.Schema.Types.ObjectId;
-
   @Prop({ required: true })
   startTime: Date;
 
@@ -31,9 +32,7 @@ export class Voucher {
   @Prop()
   description: string;
 }
-
+export interface IVoucherModel extends Document, Voucher {}
 export const VoucherSchema = SchemaFactory.createForClass(Voucher);
-
-// VoucherSchema.pre('findOneAndUpdate', () => {
-//   console.log('hihi');
-// });
+VoucherSchema.plugin(mongoosePaginate);
+VoucherSchema.plugin(mongooseAggregatePaginate);

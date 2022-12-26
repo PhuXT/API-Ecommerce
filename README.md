@@ -12,8 +12,6 @@ Manage user permissions
 Manage products including original price, preferential price, payment final price
 Email to notify support when there is a promotion, voucher ...
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
 ## Installation
 
 ```bash

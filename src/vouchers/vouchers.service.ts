@@ -4,15 +4,16 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Standard } from '../shared/constants';
 import { CategorysService } from '../categories/categories.service';
 import { UpdateVoucherDto } from './dto/update-voucher.dto';
 import { IVoucher } from './entities/voucher.entity';
-import { VoucherRepository } from './vouchers.repository';
+import { VouchersRepository } from './vouchers.repository';
 
 @Injectable()
 export class VouchersService {
   constructor(
-    private voucherRepository: VoucherRepository,
+    private voucherRepository: VouchersRepository,
     private categoryService: CategorysService,
   ) {}
 
@@ -39,8 +40,46 @@ export class VouchersService {
     }
   }
 
-  findAll(): Promise<IVoucher[]> {
-    return this.voucherRepository.find({});
+  async getList(query) {
+    const {
+      page,
+      perPage,
+      sortBy,
+      sortType,
+      startTime,
+      endTime,
+      discount,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      categories,
+      nameVoucher,
+      code,
+    } = query;
+    const options: { [k: string]: any } = {
+      sort: { [sortBy]: sortType },
+      limit: perPage || Standard.PER_PAGE,
+      page: page || Standard.PAGE,
+    };
+
+    const andFilter: { [k: string]: any } = [];
+    if (startTime) {
+      andFilter.push({ startTime: { $gt: startTime } });
+    }
+    if (endTime) {
+      andFilter.push({ startTime: { $gt: endTime } });
+    }
+    if (discount) {
+      andFilter.push({ discount });
+    }
+    if (nameVoucher) {
+      andFilter.push({ nameVoucher });
+    }
+    if (code) {
+      andFilter.push({ code });
+    }
+    const filters = andFilter.length > 0 ? { $and: andFilter } : {};
+    const data = await this.voucherRepository.paginate(filters, options);
+
+    return data;
   }
 
   async findOne(id: string): Promise<IVoucher> {
@@ -68,7 +107,6 @@ export class VouchersService {
     });
   }
   async update(id: string, updateVoucherDto: UpdateVoucherDto) {
-    console.log(updateVoucherDto);
     try {
       const a = await this.voucherRepository.findOneAndUpdate(
         {
@@ -76,8 +114,6 @@ export class VouchersService {
         },
         updateVoucherDto,
       );
-      console.log(a);
-      console.log();
     } catch (error) {
       console.log(error);
     }

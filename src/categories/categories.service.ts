@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { Standard } from 'src/shared/constants';
 import { ItemsService } from '../items/items.service';
 import { STATUS_ENUM } from './categories.constant';
@@ -8,8 +13,9 @@ import { ICategory } from './entity/categories.entity';
 @Injectable()
 export class CategorysService {
   constructor(
-    private categoryRepository: CategoriesRepository,
+    @Inject(forwardRef(() => ItemsService))
     private itemService: ItemsService,
+    private categoryRepository: CategoriesRepository,
   ) {}
 
   // CREATE
@@ -64,7 +70,7 @@ export class CategorysService {
 
   // GET BY ID
   getCategory(categoryName: string): Promise<ICategory> {
-    return this.categoryRepository.findOne({ categoryName });
+    return this.categoryRepository.findOne({ categoryName: categoryName });
   }
 
   // UPDATE

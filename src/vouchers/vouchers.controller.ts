@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { VouchersService } from './vouchers.service';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
@@ -19,6 +20,8 @@ import {
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -71,21 +74,39 @@ export class VouchersController {
     return this.vouchersService.create(createVoucherDto);
   }
 
-  // [GET] find all
+  // [GET] get List
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(USERS_ROLE_ENUM.ADMIN, USERS_ROLE_ENUM.USER)
   @ApiOkResponse({
-    type: [VoucherSwanggerDto],
     description: 'Return list voucher',
   })
   @ApiUnauthorizedResponse({
     type: UnauthorizedExceptionDto,
     description: 'Need to login',
   })
+  @ApiOperation({
+    operationId: 'GetVoucher',
+    description: 'Get list voucher',
+  })
+  @ApiQuery({ name: 'page', type: Number, required: false, example: 1 })
+  @ApiQuery({ name: 'perPage', type: Number, required: false, example: 25 })
+  @ApiQuery({ name: 'sortBy', type: String, required: false })
+  @ApiQuery({ name: 'startTime', type: Date, required: false })
+  @ApiQuery({ name: 'endTime', type: Number, required: false })
+  @ApiQuery({ name: 'discount', type: String, required: false })
+  @ApiQuery({ name: 'categories', type: String, required: false })
+  @ApiQuery({ name: 'nameVoucher', type: String, required: false })
+  @ApiQuery({ name: 'code', type: String, required: false })
+  @ApiQuery({
+    name: 'sortType',
+    enum: ['asc', 'desc'],
+    required: false,
+    example: 'desc',
+  })
   @Get()
-  findAll(): Promise<IVoucher[]> {
-    return this.vouchersService.findAll();
+  getList(@Query() query) {
+    return this.vouchersService.getList(query);
   }
 
   // [GET] find one

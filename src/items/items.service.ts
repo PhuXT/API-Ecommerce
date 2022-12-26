@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
 } from '@nestjs/common';
 import { Standard } from '../shared/constants';
@@ -8,10 +10,13 @@ import { FlashsalesService } from '../flashsales/flashsales.service';
 import { IItems, IUpdateItem } from './entities/item.entity';
 import { ItemsRepository } from './items.repository';
 import { IItemModel } from './items.schema';
+import { CategorysService } from 'src/categories/categories.service';
 
 @Injectable()
 export class ItemsService {
   constructor(
+    @Inject(forwardRef(() => CategorysService))
+    private categorysService: CategorysService,
     private itemRepository: ItemsRepository,
     private flashsalesService: FlashsalesService,
   ) {}
@@ -19,9 +24,25 @@ export class ItemsService {
   // CREATE
   async create(createItemDto: IItems): Promise<IItemModel> {
     createItemDto['stocks'] = createItemDto.quantity;
-    console.log(createItemDto);
+    try {
+      const category = await this.categorysService.getCategory(
+        createItemDto.category.name,
+      );
+      if (!category) {
+        throw new BadRequestException('Categories doesnt exits');
+      }
+      const newItem = await this.itemRepository.create(createItemDto);
+      return newItem;
+    } catch (error) {
+      if (error.keyPattern) {
+        if (error.keyValue.name)
+          throw new ConflictException('Name item already exits');
 
-    return this.itemRepository.create(createItemDto);
+        if (error.keyValue.barCode)
+          throw new ConflictException('Name item already exits');
+      }
+      throw new BadRequestException('Categories doesnt exits');
+    }
   }
 
   async getList(query) {
@@ -71,10 +92,15 @@ export class ItemsService {
     const item = Promise.all([
       this.itemRepository.findOne({ _id: id }),
       this.flashsalesService.findFlashSaleNow(),
-    ]).then((value) => {
-      const [item, flashSaleNow] = value;
-      return this.getItemFlashSale(item, flashSaleNow);
-    });
+    ])
+      .then((value) => {
+        const [item, flashSaleNow] = value;
+        return this.getItemFlashSale(item, flashSaleNow);
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .catch((errr) => {
+        throw new BadRequestException('Item does not exist');
+      });
     return item;
   }
 
@@ -89,6 +115,7 @@ export class ItemsService {
         { _id: id },
         updateItemDto,
       );
+
       return itemUpdated;
     } catch (error) {
       if (error.keyPattern) {
@@ -98,11 +125,17 @@ export class ItemsService {
         if (error.keyValue.barCode)
           throw new ConflictException('Name item already exits');
       }
+      throw new BadRequestException('item does not exist');
     }
   }
 
-  async remove(id: string): Promise<boolean> {
-    const item = await this.itemRepository.findOne({ _id: id });
+  async remove(id: string) {
+    let item: { [k: string]: any };
+    try {
+      item = await this.itemRepository.findOne({ _id: id });
+    } catch (error) {
+      throw new BadRequestException('Item doesnt exist');
+    }
     if (item.sold > 0) throw new BadRequestException('Item cannot be delete');
     return this.itemRepository.deleteMany({ _id: id });
   }
