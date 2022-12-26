@@ -2,6 +2,10 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
 import { ORDER_STATUS_ENUM } from './orders.constain';
 
+import * as mongoosePaginate from 'mongoose-paginate-v2';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const mongooseAggregatePaginate = require('mongoose-aggregate-paginate-v2');
+
 export type OrderDocument = Order & Document;
 
 // Item Schema
@@ -81,7 +85,6 @@ class Voucher {
   @Prop({ required: true })
   applyCategories: string[];
 }
-const voucherSchema = SchemaFactory.createForClass(Voucher);
 
 // Main Schema ( ORDER SCHEMA)
 @Schema({ timestamps: true })
@@ -103,3 +106,7 @@ export class Order {
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
+OrderSchema.plugin(mongoosePaginate);
+OrderSchema.plugin(mongooseAggregatePaginate);
+
+export interface IOrderModel extends Document, Order {}

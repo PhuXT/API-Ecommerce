@@ -1,12 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Standard } from '../shared/constants';
 import { FlashsalesService } from '../flashsales/flashsales.service';
 import { ItemsService } from '../items/items.service';
 import { UsersService } from '../users/users.service';
 import { VouchersService } from '../vouchers/vouchers.service';
-import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateItemOrder, IOrder, UserOrder } from './entities/order.entity';
 import { OrdersRepository } from './order.repository';
+import { IOrderModel } from './order.schema';
 import { ORDER_STATUS_ENUM } from './orders.constain';
+import { USERS_ROLE_ENUM } from 'src/users/users.constant';
 
 @Injectable()
 export class OrdersService {
@@ -18,16 +20,18 @@ export class OrdersService {
     private readonly itemService: ItemsService,
   ) {}
 
-  async create(userInfor, createOrderDto: CreateOrderDto): Promise<IOrder> {
+  async create(userInfor, createOrderDto): Promise<IOrderModel> {
     // user Order
+
     const user: UserOrder = createOrderDto.user;
-    user.userId = userInfor.id;
+    user.userId = userInfor.userID;
     user.userName = userInfor.userName;
 
     // Check List Item Order
     const listItem = createOrderDto.items.map(async (itemOrderDto) => {
       let itemDtail = await this.itemService.findOne(
-        itemOrderDto.itemId.toString(),
+        itemOrderDto.itemId,
+        // itemOrderDto.itemId.toString(),
       );
 
       // Check Stocks Item
@@ -47,7 +51,8 @@ export class OrdersService {
 
         if (itemDtail.flashSaleQuantity < itemOrderDto.amount) {
           itemDtail = await this.itemService.findOneOrigin(
-            itemOrderDto.itemId.toString(),
+            // itemOrderDto.itemId.toString(),
+            itemOrderDto.itemId,
           );
           createItemOrder = { ...itemDtail['_doc'] };
           flashSaleQuantityUpdate = null;
@@ -125,15 +130,18 @@ export class OrdersService {
 
       items.forEach(async (item) => {
         await this.itemService.updateStocksAndSold(
-          item._id.toString(),
+          // item._id.toString(),
+          item._id,
           -item.amountOrder,
           item.amountOrder,
         );
 
         if (item.flashSaleQuantityUpdate !== null) {
           await this.flashSaleService.updateQuantity(
-            item.flashSaleId.toString(),
-            item._id.toString(),
+            // item.flashSaleId.toString(),
+            item.flashSaleId,
+            // item._id.toString(),
+            item._id,
             -item.amountOrder,
           );
         }
@@ -147,20 +155,81 @@ export class OrdersService {
     return orderCreated;
   }
 
-  findAll(): Promise<IOrder[]> {
-    return this.ordersRepositoty.find({});
+  async getList(query) {
+    const {
+      page,
+      perPage,
+      sortBy,
+      sortType,
+      orderID,
+      userID,
+      status,
+      createdAt,
+    } = query;
+
+    const options: { [k: string]: any } = {
+      sort: { [sortBy]: sortType },
+      limit: perPage || Standard.PER_PAGE,
+      page: page || Standard.PAGE,
+    };
+
+    const andFilter: { [k: string]: any } = [];
+    if (orderID) {
+      andFilter.push({ orderID });
+    }
+    if (status) {
+      andFilter.push({ status });
+    }
+
+    if (createdAt) {
+      andFilter.push({ createdAt: { $gt: createdAt } });
+    }
+    const filters = andFilter.length > 0 ? { $and: andFilter } : {};
+    const data = await this.ordersRepositoty.paginate(filters, options);
+    if (userID) {
+      const datalistOrFindbyID: { [k: string]: any } = {};
+
+      data.docs.forEach((order) => {
+        const listOrFindbyID = [];
+
+        if (order.user.userId.toString() === userID) {
+          listOrFindbyID.push(order);
+          datalistOrFindbyID.docs = listOrFindbyID;
+          datalistOrFindbyID.totalDocs = data.totalDocs;
+          datalistOrFindbyID.limit = data.limit;
+          datalistOrFindbyID.totalPages = data.totalPages;
+          datalistOrFindbyID.page = data.page;
+          datalistOrFindbyID.pagingCounter = data.pagingCounter;
+        }
+      });
+      return datalistOrFindbyID;
+    }
+
+    return data;
   }
 
-  async findOne(userId: string, orderId: string): Promise<IOrder> {
+  async findOne(userId: string, orderId: string): Promise<IOrderModel> {
     const order = await this.ordersRepositoty.findOne({ _id: orderId });
+    if (!order) {
+      throw new BadRequestException('order does not exist');
+    }
     if (order.user.userId.toString() !== userId) {
       throw new BadRequestException('you can only view your order');
     }
     return order;
   }
 
-  async update(id: string): Promise<string> {
+  async update(id: string, request): Promise<string> {
     const orders = await this.ordersRepositoty.findOne({ _id: id });
+    if (!orders) {
+      throw new BadRequestException('Order does not exist');
+    }
+    if (
+      orders.user.userId.toString() !== id &&
+      request.user.userRole !== USERS_ROLE_ENUM.ADMIN
+    ) {
+      throw new BadRequestException('you can only view your order');
+    }
     if (
       orders.status === ORDER_STATUS_ENUM.CANCEL ||
       orders.status === ORDER_STATUS_ENUM.DELIVERED

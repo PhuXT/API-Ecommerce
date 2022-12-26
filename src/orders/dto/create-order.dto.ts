@@ -21,7 +21,7 @@ class User {
   address: string;
 }
 
-class Item {
+class ItemDetail {
   @ApiProperty()
   @IsNotEmpty()
   @IsNumber()
@@ -30,15 +30,15 @@ class Item {
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  itemId: mongoose.Schema.Types.ObjectId;
+  itemId: string;
 }
 
 export class CreateOrderDto {
-  @ApiProperty({ type: [Item] })
+  @ApiProperty({ type: [ItemDetail] })
   @ValidateNested({ each: true })
-  @Type(() => Item)
+  @Type(() => ItemDetail)
   @IsNotEmpty()
-  items: Item[];
+  items: ItemDetail[];
 
   @ValidateNested({ each: true })
   @Type(() => User)
