@@ -65,7 +65,7 @@ export class VouchersService {
       andFilter.push({ startTime: { $gt: startTime } });
     }
     if (endTime) {
-      andFilter.push({ startTime: { $gt: endTime } });
+      andFilter.push({ endTime: { $gt: endTime } });
     }
     if (discount) {
       andFilter.push({ discount });

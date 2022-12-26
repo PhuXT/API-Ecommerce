@@ -1,15 +1,18 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { Document } from 'mongoose';
+import { Document } from 'mongoose';
 import { CreateFlashsaleDto } from './dto/create-flashsale.dto';
 import { STATUS_FLASHSALE_ENUM } from './flashsale.constain';
+import * as mongoosePaginate from 'mongoose-paginate-v2';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const mongooseAggregatePaginate = require('mongoose-aggregate-paginate-v2');
 
 export type FlashSaleDocument = FlashSale & Document;
 
 @Schema({ _id: false })
 export class Item {
-  @Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
-  itemId: mongoose.Schema.Types.ObjectId;
+  @Prop({ required: true, type: String })
+  itemId: string;
 
   @Prop({ required: true })
   flashSaleQuantity: number;
@@ -38,6 +41,8 @@ export class FlashSale {
 }
 
 export const FlashSaleSchema = SchemaFactory.createForClass(FlashSale);
+FlashSaleSchema.plugin(mongoosePaginate);
+FlashSaleSchema.plugin(mongooseAggregatePaginate);
 
 export interface IFlashSaleModel extends Document, CreateFlashsaleDto {}
 

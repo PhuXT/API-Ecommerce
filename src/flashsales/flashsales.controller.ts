@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { FlashsalesService } from './flashsales.service';
 import { CreateFlashsaleDto } from './dto/create-flashsale.dto';
@@ -19,6 +20,8 @@ import {
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -33,7 +36,8 @@ import {
   UnauthorizedExceptionDto,
 } from '../swangger/swangger.dto';
 import { FlashSaleSwangger } from './dto/swangger/flash-sale-swangger.dto';
-import { type } from 'os';
+import { IFlashSaleModel } from './flashsale.schema';
+import { STATUS_ENUM } from '../shared/constants';
 
 @ApiTags('flashsales')
 @ApiBearerAuth()
@@ -71,19 +75,32 @@ export class FlashsalesController {
     description: 'Return list flash sale',
   })
   //
-  @Get()
-  findAll(): Promise<IFlashSale[]> {
-    return this.flashsalesService.findAll();
-  }
-
-  //
-  @ApiOkResponse({
-    type: FlashSaleSwangger,
-    description: 'Find one flash sale',
+  @ApiOperation({
+    operationId: 'Get list FlashSale',
+    description: 'Get list FlashSale',
   })
-  @Get(':id')
-  findOne(@Param('id') id: string): Promise<IFlashSale> {
-    return this.flashsalesService.findOne(id);
+  @ApiQuery({ name: 'page', type: Number, required: false, example: 1 })
+  @ApiQuery({ name: 'perPage', type: Number, required: false, example: 25 })
+  @ApiQuery({ name: 'sortBy', type: String, required: false })
+  @ApiQuery({ name: 'name', type: String, required: false })
+  @ApiQuery({ name: 'itemID', type: String, required: false })
+  @ApiQuery({ name: 'startTime', type: Date, required: false })
+  @ApiQuery({ name: 'endTime', type: Date, required: false })
+  @ApiQuery({
+    name: 'status',
+    enum: STATUS_ENUM,
+    required: false,
+    example: STATUS_ENUM.ACTIVE,
+  })
+  @ApiQuery({
+    name: 'sortType',
+    enum: ['asc', 'desc'],
+    required: false,
+    example: 'desc',
+  })
+  @Get()
+  getList(@Query() query) {
+    return this.flashsalesService.getList(query);
   }
 
   //

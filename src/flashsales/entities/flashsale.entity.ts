@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { STATUS_FLASHSALE_ENUM } from '../flashsale.constain';
 
 export interface IFlashSale {
-  _id?: mongoose.Schema.Types.ObjectId | string;
+  _id?: string;
   name?: string;
   status?: STATUS_FLASHSALE_ENUM;
   items?: [IFlashSaleItemInfor];

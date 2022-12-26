@@ -2,12 +2,12 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { FilterQuery } from 'mongoose';
 import { IFlashSale } from './entities/flashsale.entity';
 import { STATUS_FLASHSALE_ENUM } from './flashsale.constain';
-import { FlashSaleDocument } from './flashsale.schema';
+import { FlashSaleDocument, IFlashSaleModel } from './flashsale.schema';
 import { FlashSaleRepository } from './flashsales.repository';
-import { CronJob } from 'cron';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { UsersService } from '../users/users.service';
 import { EmailsService } from '../emails/emails.service';
+import { Standard } from '../shared/constants';
 
 @Injectable()
 export class FlashsalesService {
@@ -20,6 +20,7 @@ export class FlashsalesService {
 
   async create(createFlashsaleDto: IFlashSale): Promise<IFlashSale> {
     const flashSale = await this.flashsaleRepository.create(createFlashsaleDto);
+    return flashSale;
     // send mail cronjob-------------------------
     // const startTime = createFlashsaleDto.startTime;
     // const conJobTime = new Date(startTime).getTime() - 3 * 60 * 1000;
@@ -45,12 +46,57 @@ export class FlashsalesService {
 
     // this.schedulerRegistry.addCronJob('send flashSale noti', job);
     // job.start();
-
-    return flashSale;
   }
 
-  async findAll(): Promise<IFlashSale[]> {
-    return this.flashsaleRepository.find({});
+  async getList(query) {
+    const {
+      page,
+      perPage,
+      sortBy,
+      sortType,
+      name,
+      itemID,
+      startTime,
+      endTime,
+    } = query;
+    const options: { [k: string]: any } = {
+      sort: { [sortBy]: sortType },
+      limit: perPage || Standard.PER_PAGE,
+      page: page || Standard.PAGE,
+      select: '-password',
+    };
+
+    const andFilter: { [k: string]: any } = [];
+    if (name) {
+      andFilter.push({ name });
+    }
+    if (startTime) {
+      andFilter.push({ startTime: { $gt: startTime } });
+    }
+    if (endTime) {
+      andFilter.push({ endTime: { $gt: endTime } });
+    }
+    const filters = andFilter.length > 0 ? { $and: andFilter } : {};
+
+    const values = await this.flashsaleRepository.paginate(filters, options);
+    if (itemID) {
+      const data: { [k: string]: any } = {};
+      const listFlashSaleFinByItemID = values.docs.map((flashSale) => {
+        const data = [];
+        if (flashSale.items.includes(itemID)) {
+          data.push(flashSale);
+        }
+        return data;
+      });
+      data.docs = listFlashSaleFinByItemID;
+      data.totalDocs = values.totalDocs;
+      data.limit = values.limit;
+      data.totalPages = values.totalPages;
+      data.page = values.page;
+      data.pagingCounter = values.pagingCounter;
+      return data;
+    }
+    return values;
   }
 
   find(filterQuery: FilterQuery<FlashSaleDocument>): Promise<IFlashSale[]> {
