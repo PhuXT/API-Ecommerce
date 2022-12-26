@@ -1,0 +1,32 @@
+#Default config
+#hostname/baseUrl/version
+service:
+  name: api-ecommerce
+  description: ecommerce
+  baseUrl: /api/ecommerce
+  docsBaseUrl: /docs/ecommerce
+  apiVersion: /v1
+
+server:
+  host: 127.0.0.1
+  port: 3000
+  hostname: 127.0.0.1:3000
+  swaggerSchema: http
+
+mongodb:
+  uri:
+
+mailer:
+  host:
+  user:
+  password:
+jwt:
+  secretKey: vanphu04
+  expiresRegister: 900s
+  expiresLive: 1d
+
+  aws-s3:
+  BUCKET_NAME:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_END_POINT:
