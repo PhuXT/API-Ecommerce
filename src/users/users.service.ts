@@ -6,9 +6,11 @@ import {
 import { UsersRepository } from './users.repository';
 import * as bcrypt from 'bcrypt';
 import { Standard, STATUS_ENUM } from '../shared/constants';
-import { IUsers } from './users.interface';
+import { IUsers, IUsersQuery } from './users.interface';
 import { USERS_ROLE_ENUM } from './users.constant';
 import { responeErrorMongoDB } from '../errors/custom_mongo_errors';
+import { UnauthorizedException } from '@nestjs/common/exceptions';
+import { use } from 'passport';
 
 @Injectable()
 export class UsersService {
@@ -41,7 +43,7 @@ export class UsersService {
     return this.userRepository.findOneAndUpdate(id, request);
   }
 
-  //
+  // [GET] /users
   async getList(query) {
     const { page, perPage, sortBy, sortType, status, role } = query;
 
@@ -66,42 +68,49 @@ export class UsersService {
     return data;
   }
 
-  //
+  //[DELETE] /users/:id
   async delete(id: string) {
-    const user = await this.userRepository.findOne({ _id: id });
-    if (!user) {
-      throw new BadRequestException('User not exist');
+    try {
+      const user = await this.userRepository.findOne({ _id: id });
+      if (!user) {
+        return { success: true };
+      }
+      if (user.status === STATUS_ENUM.ACTIVE) {
+        throw new BadRequestException('Active user, cannot be deleted');
+      }
+      return { success: await this.userRepository.deleteMany({ _id: id }) };
+    } catch (error) {
+      throw new BadRequestException(error.message);
     }
-    if (user.status === STATUS_ENUM.ACTIVE) {
-      throw new BadRequestException('Active user, cannot be deleted');
-    }
-    return { success: await this.userRepository.deleteMany({ _id: id }) };
   }
 
-  //
-  async update(request, updateUserDto: IUsers) {
-    if (updateUserDto.password) {
-      updateUserDto.password = await this.hashPassword(
-        updateUserDto.password,
-        10,
-      );
+  //[PATCH] /users
+  async update(request, user: IUsers, query: IUsersQuery) {
+    if (user.password) {
+      user.password = await this.hashPassword(user.password, 10);
     }
-    let updateUserData = updateUserDto;
-    const userID = request.user.id;
-    const roleUser = request.user.role;
 
-    if (roleUser !== USERS_ROLE_ENUM.ADMIN) {
+    let userID;
+    let dataUpdate;
+    if (query.userID) {
+      if (request.user.userRole !== USERS_ROLE_ENUM.ADMIN) {
+        throw new UnauthorizedException('Unauthorized');
+      }
+
+      userID = query.userID;
+      dataUpdate = user;
+    } else {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { role, status, ...updateData } = updateUserDto;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      updateUserData = updateData;
+      const { role, status, ...userUpdateData } = user;
+      dataUpdate = userUpdateData;
+      userID = request.user.userID;
     }
 
     try {
-      await this.userRepository.update({ _id: userID }, updateUserDto);
+      await this.userRepository.update({ _id: userID }, dataUpdate);
+      return { success: true };
     } catch (error) {
-      responeErrorMongoDB(error);
+      throw new BadRequestException('The information entered is incorrect');
     }
-    return { success: true };
   }
 }

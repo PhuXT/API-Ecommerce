@@ -28,8 +28,8 @@ import {
 import { StatusRespone } from '../shared/respone.dto';
 import { ApiCommonResponse } from 'src/decorators/common-response.decorator';
 
-@ApiTags('auth')
 @Controller('auth')
+@ApiTags('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 

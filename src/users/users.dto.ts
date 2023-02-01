@@ -1,8 +1,9 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsNumberString,
   IsOptional,
   IsString,
   Matches,
@@ -32,50 +33,17 @@ export class CreateUserDto {
   password: string;
 
   @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
+  @IsNumberString()
   @MinLength(9)
   @MaxLength(11)
   phone?: string;
 
   @ApiPropertyOptional()
-  @IsOptional()
   @IsString()
   address?: string;
 }
 
-export class UpdateUserDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  userName?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsEmail()
-  @IsNotEmpty()
-  email?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-    message: 'password too weak',
-  })
-  password?: string;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  @MinLength(9)
-  @MaxLength(11)
-  phone?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  address?: string;
-
+export class UpdateUserDto extends PartialType(CreateUserDto) {
   @ApiPropertyOptional()
   @IsOptional()
   @IsEnum(USERS_ROLE_ENUM)

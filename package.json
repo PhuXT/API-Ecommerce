@@ -37,7 +37,7 @@
     "aws-sdk": "^2.1167.0",
     "bcrypt": "^5.0.1",
     "class-transformer": "^0.5.1",
-    "class-validator": "^0.13.2",
+    "class-validator": "^0.14.0",
     "config": "^3.3.8",
     "fastify-swagger": "^5.2.0",
     "handlebars": "^4.7.7",

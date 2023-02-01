@@ -8,6 +8,7 @@ import {
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { ErrorModelDto } from '../errors/errrors.dto';
+
 export function ApiCommonResponse() {
   return applyDecorators(
     HttpCode(200),

@@ -26,21 +26,20 @@ import { ApiCommonResponse } from '../decorators/common-response.decorator';
 import { StatusRespone } from '../shared/respone.dto';
 import { UpdateUserDto } from './users.dto';
 
+@Controller('users')
 @ApiTags('users')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  //
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(USERS_ROLE_ENUM.ADMIN)
+  // [GET] /users
   @Get()
+  @Roles(USERS_ROLE_ENUM.ADMIN)
   @ApiCommonResponse()
   @ApiOperation({
     operationId: 'GetListUsers',
-    description: 'Get list Facebook Users info',
+    description: 'Get list Facebook Users infos',
   })
   @ApiQuery({
     name: 'status',
@@ -67,7 +66,7 @@ export class UsersController {
     return this.usersService.getList(query);
   }
 
-  //
+  //[DELETE] /users/:id
   @Roles(USERS_ROLE_ENUM.ADMIN)
   @ApiCommonResponse()
   @ApiOkResponse({ type: StatusRespone })
@@ -80,16 +79,21 @@ export class UsersController {
     return this.usersService.delete(query);
   }
 
-  //
+  //[PATCH] /users
+  @Patch('')
   @Roles(USERS_ROLE_ENUM.ADMIN, USERS_ROLE_ENUM.USER)
   @ApiOperation({
     operationId: 'UpdateUser',
     description: 'Update user',
   })
+  @ApiQuery({ name: 'userID', type: String, required: false })
   @ApiCommonResponse()
   @ApiOkResponse({ type: StatusRespone })
-  @Patch('')
-  updateInfo(@Request() request, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(request, updateUserDto);
+  updateInfo(
+    @Request() request,
+    @Body() updateUserDto: UpdateUserDto,
+    @Query() query,
+  ) {
+    return this.usersService.update(request, updateUserDto, query);
   }
 }
