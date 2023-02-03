@@ -8,7 +8,8 @@ import { Standard } from 'src/shared/constants';
 import { ItemsService } from '../items/items.service';
 import { STATUS_ENUM } from './categories.constant';
 import { CategoriesRepository } from './categories.repository';
-import { ICategory } from './entity/categories.entity';
+import { ICategory } from './categories.interface';
+import { UpdateOrderDto } from 'src/orders/dto/update-order.dto';
 
 @Injectable()
 export class CategorysService {
@@ -26,20 +27,22 @@ export class CategorysService {
 
   // DELETE
   async delete(categoryId: string) {
-    console.log(categoryId);
+    try {
+      const itemWiThThisCategory = await this.itemService.find({
+        'category.id': categoryId,
+      });
 
-    const itemWiThThisCategory = await this.itemService.find({
-      'category.id': categoryId,
-    });
-
-    if (itemWiThThisCategory[0]) {
-      throw new BadRequestException('You cannot delete this item');
+      if (itemWiThThisCategory[0]) {
+        throw new BadRequestException('You cannot delete this item');
+      }
+      await this.categoryRepository.deleteMany({ _id: categoryId });
+      return { success: true };
+    } catch (error) {
+      throw new BadRequestException(error.message);
     }
-    await this.categoryRepository.deleteMany({ _id: categoryId });
-    return { success: true };
   }
 
-  //
+  //GETLIST
   async getList(query) {
     const { page, perPage, sortBy, sortType, status, prioriry } = query;
     const options: { [k: string]: any } = {
@@ -56,13 +59,13 @@ export class CategorysService {
 
     const data = await this.categoryRepository.paginate(filters, options);
     if (prioriry) {
-      let index = Number(prioriry);
+      let index = Math.floor(Number(prioriry));
       if (index <= 0) index = 0;
       if (index >= data.docs.length) index = data.docs.length - 1;
 
       return data.docs.sort((a, b) => {
         return a.priority - b.priority;
-      })[0];
+      })[index];
     }
 
     return data;
@@ -74,10 +77,7 @@ export class CategorysService {
   }
 
   // UPDATE
-  async update(
-    categoryId: string,
-    updateCategoryDto: ICategory,
-  ): Promise<ICategory> {
+  async update(categoryId: string, updateCategoryDto: ICategory) {
     const arrUpdate = [];
 
     if (updateCategoryDto.priority) {
@@ -86,13 +86,10 @@ export class CategorysService {
       });
 
       if (listCategoryActive.length <= 1) {
-        throw new BadRequestException(
-          'This category priority already number one',
-        );
+        throw new BadRequestException('need more active categories');
       }
-
       updateCategoryDto.priority = this.updatePriority(
-        Number(updateCategoryDto.priority) - 1,
+        Math.floor(Number(updateCategoryDto.priority)) - 1,
         listCategoryActive,
       );
     }
@@ -104,7 +101,6 @@ export class CategorysService {
       });
 
       const oldCategoryName = category.categoryName;
-      // const arrUpdate = [];
       const categoryUpdate = this.categoryRepository.findOneAndUpdate(
         { _id: categoryId },
         updateCategoryDto,
@@ -116,9 +112,14 @@ export class CategorysService {
         { $set: { 'category.name': updateCategoryDto.categoryName } },
       );
       arrUpdate.push(updateCategoryOfItem);
+      Promise.all(arrUpdate).then((value) => value[0]);
+      return { success: true };
     }
-
-    return Promise.all(arrUpdate).then((value) => value[0]);
+    await this.categoryRepository.update(
+      { _id: categoryId },
+      updateCategoryDto,
+    );
+    return { success: true };
   }
 
   //

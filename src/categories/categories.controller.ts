@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CategorysService } from './categories.service';
-import { CreateCategoryDto } from './dto/create-category.dto';
+import { CreateCategoryDto } from './categories.dto';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -27,8 +27,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/role.guard';
 import { Roles } from '../auth/role.decorator';
 import { USERS_ROLE_ENUM } from '../users/users.constant';
-import { ICategory } from './entity/categories.entity';
-import { UpdateCategoryDto } from './dto/update-category.dto';
+import { ICategory } from './categories.interface';
+import { UpdateCategoryDto } from './categories.dto';
 import { CategorySwanggerRespone } from './dto/swangger/category-swangger.dto';
 import {
   BadRequestDto,
@@ -50,24 +50,20 @@ import { ApiCommonResponse } from '../decorators/common-response.decorator';
 })
 @ApiUnauthorizedResponse({
   type: UnauthorizedExceptionDto,
-  description: 'login with non-admin rights',
 })
 @Controller('categories')
 export class CategorysController {
   constructor(private categoryService: CategorysService) {}
 
-  // [POST] api/v1/categories
+  // [POST] /categories
   @ApiCreatedResponse({
     type: CategorySwanggerRespone,
-    description: 'Return new category',
   })
   @ApiBadRequestResponse({
     type: BadRequestDto,
-    description: 'Category Name, image not empty',
   })
   @ApiConflictResponse({
     type: ConFlictExceptionDto,
-    description: 'Category Name already exist',
   })
   @Post('/')
   async create(
@@ -76,7 +72,7 @@ export class CategorysController {
     return this.categoryService.create(createCategoryDto);
   }
 
-  // [DELETE] api/v1/categories/:categoryId
+  // [DELETE] /categories/:categoryId
   @ApiOkResponse({ type: StatusRespone })
   @ApiBadRequestResponse({
     type: BadRequestDto,
@@ -87,11 +83,11 @@ export class CategorysController {
     return this.categoryService.delete(categoryId);
   }
 
-  // [GET] api/v1/categories'
+  // [GET] /categories
   @ApiCommonResponse()
   @ApiOperation({
     operationId: 'GetCategories',
-    description: 'Get list Category',
+    description: 'Get list Categories',
   })
   @ApiQuery({
     name: 'status',
@@ -102,7 +98,12 @@ export class CategorysController {
   @ApiQuery({ name: 'prioriry', type: Number, required: false, example: 1 })
   @ApiQuery({ name: 'page', type: Number, required: false, example: 1 })
   @ApiQuery({ name: 'perPage', type: Number, required: false, example: 25 })
-  @ApiQuery({ name: 'sortBy', type: String, required: false })
+  @ApiQuery({
+    name: 'sortBy',
+    type: String,
+    required: false,
+    example: 'priority',
+  })
   @ApiQuery({
     name: 'sortType',
     enum: ['asc', 'desc'],
@@ -114,10 +115,9 @@ export class CategorysController {
     return this.categoryService.getList(query);
   }
 
-  // [PATCH] api/v1/categories/categoryId'
+  // [PATCH] categories/:categoryID'
   @ApiOkResponse({
-    type: CategorySwanggerRespone,
-    description: 'return category updated',
+    type: StatusRespone,
   })
   @ApiConflictResponse({
     type: ConFlictExceptionDto,

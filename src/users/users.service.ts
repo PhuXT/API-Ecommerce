@@ -10,7 +10,6 @@ import { IUsers, IUsersQuery } from './users.interface';
 import { USERS_ROLE_ENUM } from './users.constant';
 import { responeErrorMongoDB } from '../errors/custom_mongo_errors';
 import { UnauthorizedException } from '@nestjs/common/exceptions';
-import { use } from 'passport';
 
 @Injectable()
 export class UsersService {

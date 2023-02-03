@@ -1,4 +1,4 @@
 import { Document } from 'mongoose';
-import { ICategory } from './entity/categories.entity';
+import { ICategory } from './categories.interface';
 
 export interface ICategoriesModel extends Document, ICategory {}

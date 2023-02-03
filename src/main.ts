@@ -23,11 +23,7 @@ async function bootstrap() {
     }),
   );
   const document = SwaggerModule.createDocument(app, configDocs);
-  SwaggerModule.setup(
-    `${config.get('service.docsBaseUrl')}${config.get('service.apiVersion')}`,
-    app,
-    document,
-  );
+  SwaggerModule.setup(`${config.get('service.docsBaseUrl')}`, app, document);
   await app.listen(config.get('server.port'));
 }
 bootstrap();
