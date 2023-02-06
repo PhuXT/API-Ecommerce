@@ -4,6 +4,7 @@ import { Document } from 'mongoose';
 import { CreateFlashsaleDto } from './dto/create-flashsale.dto';
 import { STATUS_FLASHSALE_ENUM } from './flashsale.constain';
 import * as mongoosePaginate from 'mongoose-paginate-v2';
+import { async } from 'rxjs';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const mongooseAggregatePaginate = require('mongoose-aggregate-paginate-v2');
 
@@ -68,6 +69,10 @@ FlashSaleSchema.pre<IFlashSaleModel>('save', async function () {
     const item = await this.db
       .collection('items')
       .findOne({ _id: this.items[i].itemId });
+    console.log(this.items[i].itemId);
+
+    console.log(Object.keys(await this.db.collection('items')));
+    console.log(await this.db.collection('items').find({}));
 
     if (!item) {
       throw new BadRequestException('Item doesnt exist');

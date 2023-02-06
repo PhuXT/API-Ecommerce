@@ -14,18 +14,6 @@ export interface IUsers {
 export interface IUsersQuery {
   userID: string;
 }
-
-// export interface IUserRespone {
-//   userName?: string;
-//   email?: string;
-//   password?: string;
-//   phone?: string;
-//   address?: string;
-//   role?: USERS_ROLE_ENUM;
-//   status?: STATUS_ENUM;
-//   _id: string;
-// }
-
 export interface IPayloadJWT {
   userName: string;
   id: string;

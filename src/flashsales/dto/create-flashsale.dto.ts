@@ -13,7 +13,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import mongoose from 'mongoose';
-import { IsEndTime, IsStartTime } from './custom-validator/validator-flashsale';
+import { IsEndTime, IsStartTime } from '../../shared/custom-validator.dto';
 import { STATUS_FLASHSALE_ENUM } from '../flashsale.constain';
 
 class flashSaleItemInfor {

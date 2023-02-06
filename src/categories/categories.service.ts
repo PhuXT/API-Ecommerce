@@ -44,7 +44,16 @@ export class CategorysService {
 
   //GETLIST
   async getList(query) {
-    const { page, perPage, sortBy, sortType, status, prioriry } = query;
+    const {
+      page,
+      perPage,
+      sortBy,
+      sortType,
+      status,
+      prioriry,
+      categoryName,
+      categoryID,
+    } = query;
     const options: { [k: string]: any } = {
       sort: { [sortBy]: sortType },
       limit: perPage || Standard.PER_PAGE,
@@ -54,6 +63,12 @@ export class CategorysService {
     const andFilter: { [k: string]: any } = [];
     if (status) {
       andFilter.push({ status });
+    }
+    if (categoryName) {
+      andFilter.push({ categoryName });
+    }
+    if (categoryID) {
+      andFilter.push({ _id: categoryID });
     }
     const filters = andFilter.length > 0 ? { $and: andFilter } : {};
 

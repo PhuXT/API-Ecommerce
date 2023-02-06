@@ -12,7 +12,7 @@ import {
 import { FlashsalesService } from './flashsales.service';
 import { CreateFlashsaleDto } from './dto/create-flashsale.dto';
 import { UpdateFlashsaleDto } from './dto/update-flashsale.dto';
-import { IFlashSale } from './entities/flashsale.entity';
+import { IFlashSale } from './flashsale.interface';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -36,7 +36,6 @@ import {
   UnauthorizedExceptionDto,
 } from '../swangger/swangger.dto';
 import { FlashSaleSwangger } from './dto/swangger/flash-sale-swangger.dto';
-import { IFlashSaleModel } from './flashsale.schema';
 import { STATUS_ENUM } from '../shared/constants';
 
 @ApiTags('flashsales')
@@ -50,12 +49,11 @@ import { STATUS_ENUM } from '../shared/constants';
 })
 @ApiUnauthorizedResponse({
   type: UnauthorizedExceptionDto,
-  description: 'login with non-admin rights',
 })
 export class FlashsalesController {
   constructor(private readonly flashsalesService: FlashsalesService) {}
 
-  //
+  // [POST] api/ecommerce/v1/flashsales
   @ApiCreatedResponse({
     type: FlashSaleSwangger,
     description: 'Flash sale created',
@@ -70,11 +68,11 @@ export class FlashsalesController {
     return this.flashsalesService.create(createFlashsaleDto);
   }
 
+  //
   @ApiOkResponse({
     type: [FlashSaleSwangger],
     description: 'Return list flash sale',
   })
-  //
   @ApiOperation({
     operationId: 'Get list FlashSale',
     description: 'Get list FlashSale',

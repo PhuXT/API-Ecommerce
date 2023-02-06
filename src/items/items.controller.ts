@@ -37,17 +37,19 @@ import { USERS_ROLE_ENUM } from '../users/users.constant';
 import { ItemSwangger } from './dto/swangger/item-swangger.dto';
 import { ApiCommonResponse } from 'src/decorators/common-response.decorator';
 import { IItemModel } from './items.schema';
+import { StatusRespone } from 'src/shared/respone.dto';
 
+@Controller('items')
 @ApiTags('items')
 @ApiInternalServerErrorResponse({
   type: InternalServerErrorExceptionDto,
   description: 'Server error',
 })
-@Controller('items')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ItemsController {
   constructor(private readonly itemsService: ItemsService) {}
 
-  // [POST] create
+  // [POST] /api/ecommerce/v1/items
   @ApiCreatedResponse({
     type: ItemSwangger,
     description: 'return item created',
@@ -62,17 +64,15 @@ export class ItemsController {
   })
   @ApiUnauthorizedResponse({
     type: UnauthorizedExceptionDto,
-    description: 'login with non-admin rights',
   })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(USERS_ROLE_ENUM.ADMIN)
   @Post()
   create(@Body() createItemDto: CreateItemDto): Promise<IItemModel> {
     return this.itemsService.create(createItemDto);
   }
 
-  // [GET]
+  // [GET] /api/ecommerce/v1/items
   @ApiCommonResponse()
   @ApiOperation({
     operationId: 'GetListUsers',
@@ -84,6 +84,8 @@ export class ItemsController {
   @ApiQuery({ name: 'itemName', type: String, required: false })
   @ApiQuery({ name: 'price', type: Number, required: false })
   @ApiQuery({ name: 'category', type: String, required: false })
+  @ApiQuery({ name: 'barCode', type: String, required: false })
+  @ApiQuery({ name: 'id', type: String, required: false })
   @ApiQuery({
     name: 'sortType',
     enum: ['asc', 'desc'],
@@ -95,45 +97,29 @@ export class ItemsController {
     return this.itemsService.getList(query);
   }
 
-  // [GET] findOne
-  @ApiOkResponse({ type: ItemSwangger, description: 'return items' })
-  @ApiBadRequestResponse({
-    type: BadRequestDto,
-    description: '',
-  })
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.itemsService.findOne(id);
-  }
-
-  // [PATCH] update
+  // [PATCH] /api/ecommerce/v1/items/:itemID
   @ApiOkResponse({ type: ItemSwangger, description: 'return item updated' })
   @ApiConflictResponse({
     type: ConFlictExceptionDto,
     description: 'Name item or barcode already exist',
   })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(USERS_ROLE_ENUM.ADMIN)
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateItemDto: UpdateItemDto,
-  ): Promise<IItemModel> {
+  update(@Param('id') id: string, @Body() updateItemDto: UpdateItemDto) {
     return this.itemsService.update(id, updateItemDto);
   }
 
-  // DELETE
-  @ApiOkResponse({ type: Boolean, description: 'return booean' })
+  // [DELETE] /api/ecommerce/v1/items/:itemID
+  @ApiOkResponse({ type: StatusRespone })
   @ApiBadRequestResponse({
     type: BadRequestDto,
-    description: 'Item sold > 0 ,Id not format objId',
+    description: 'Item sold > 0 ,Id not valid',
   })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(USERS_ROLE_ENUM.ADMIN)
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<boolean> {
+  remove(@Param('id') id: string) {
     return this.itemsService.remove(id);
   }
 }

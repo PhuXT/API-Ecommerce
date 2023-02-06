@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { FlashsalesService } from './flashsales.service';
 import { FlashsalesController } from './flashsales.controller';
 import { FlashSale, FlashSaleSchema } from './flashsale.schema';
@@ -6,6 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { FlashSaleRepository } from './flashsales.repository';
 import { UsersModule } from '../users/users.module';
 import { EmailsModule } from '../emails/emails.module';
+import { ItemsModule } from 'src/items/items.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { EmailsModule } from '../emails/emails.module';
     ]),
     UsersModule,
     EmailsModule,
+    forwardRef(() => ItemsModule),
   ],
   controllers: [FlashsalesController],
   providers: [FlashsalesService, FlashSaleRepository],

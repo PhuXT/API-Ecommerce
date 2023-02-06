@@ -1,13 +1,19 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { FilterQuery } from 'mongoose';
-import { IFlashSale } from './entities/flashsale.entity';
+import { IFlashSale } from './flashsale.interface';
 import { STATUS_FLASHSALE_ENUM } from './flashsale.constain';
-import { FlashSaleDocument, IFlashSaleModel } from './flashsale.schema';
+import { FlashSaleDocument } from './flashsale.schema';
 import { FlashSaleRepository } from './flashsales.repository';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { UsersService } from '../users/users.service';
 import { EmailsService } from '../emails/emails.service';
 import { Standard } from '../shared/constants';
+import { ItemsService } from 'src/items/items.service';
 
 @Injectable()
 export class FlashsalesService {
@@ -16,6 +22,7 @@ export class FlashsalesService {
     private schedulerRegistry: SchedulerRegistry,
     private userService: UsersService,
     private emailService: EmailsService,
+    @Inject(forwardRef(() => ItemsService)) private itemsService: ItemsService,
   ) {}
 
   async create(createFlashsaleDto: IFlashSale): Promise<IFlashSale> {

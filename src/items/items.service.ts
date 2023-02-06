@@ -4,6 +4,7 @@ import {
   forwardRef,
   Inject,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Standard } from '../shared/constants';
 import { FlashsalesService } from '../flashsales/flashsales.service';
@@ -39,15 +40,24 @@ export class ItemsService {
           throw new ConflictException('Name item already exits');
 
         if (error.keyValue.barCode)
-          throw new ConflictException('Name item already exits');
+          throw new ConflictException('BarCode already exits');
       }
       throw new BadRequestException('Categories doesnt exits');
     }
   }
 
   async getList(query) {
-    const { page, perPage, sortBy, itemName, price, category, sortType } =
-      query;
+    const {
+      page,
+      perPage,
+      sortBy,
+      itemName,
+      barCode,
+      price,
+      category,
+      sortType,
+      id,
+    } = query;
 
     const options: { [k: string]: any } = {
       sort: { [sortBy]: sortType },
@@ -59,11 +69,17 @@ export class ItemsService {
     if (itemName) {
       andFilter.push({ itemName });
     }
+    if (barCode) {
+      andFilter.push({ barCode });
+    }
+    if (id) {
+      andFilter.push({ _id: id });
+    }
     if (price) {
       andFilter.push({ price });
     }
     if (category) {
-      andFilter.push({ category });
+      andFilter.push({ 'category.name': category });
     }
     const filters = andFilter.length > 0 ? { $and: andFilter } : {};
 
@@ -109,37 +125,40 @@ export class ItemsService {
   }
 
   // UPDATE
-  async update(id: string, updateItemDto: IUpdateItem) {
+  async update(id: string, dataUpdateOfItem: IUpdateItem) {
+    if (dataUpdateOfItem.quantity) {
+      dataUpdateOfItem.stocks = dataUpdateOfItem.quantity;
+    }
     try {
-      const itemUpdated = await this.itemRepository.findOneAndUpdate(
-        { _id: id },
-        updateItemDto,
-      );
-
-      return itemUpdated;
+      const categoriesUpdate = await this.categorysService.getList({
+        categoryID: dataUpdateOfItem.category.id,
+        categoryName: dataUpdateOfItem.category.name,
+      });
+      if (!categoriesUpdate['docs'][0])
+        throw new BadRequestException('Category does not exist');
+      await this.itemRepository.findOneAndUpdate({ _id: id }, dataUpdateOfItem);
+      return { success: true };
     } catch (error) {
-      if (error.keyPattern) {
-        if (error.keyValue.name)
-          throw new ConflictException('Name item already exits');
-
-        if (error.keyValue.barCode)
-          throw new ConflictException('Name item already exits');
-      }
-      throw new BadRequestException('item does not exist');
+      throw new BadRequestException(error.message);
     }
   }
 
+  // DELETE
   async remove(id: string) {
-    let item: { [k: string]: any };
     try {
-      item = await this.itemRepository.findOne({ _id: id });
+      const item = await this.itemRepository.findOne({ _id: id });
+      if (item.sold > 0)
+        throw new UnauthorizedException('Item cannot be delete');
+      await this.itemRepository.deleteMany({ _id: id });
+      return { success: true };
     } catch (error) {
+      if (error?.status === 401)
+        throw new UnauthorizedException('Item cannot be delete');
       throw new BadRequestException('Item doesnt exist');
     }
-    if (item.sold > 0) throw new BadRequestException('Item cannot be delete');
-    return this.itemRepository.deleteMany({ _id: id });
   }
 
+  //
   getItemFlashSale(item: IItemModel, flashSaleNow): IItems {
     if (flashSaleNow && item) {
       const itemWithFlashSale = { ...item['_doc'] };

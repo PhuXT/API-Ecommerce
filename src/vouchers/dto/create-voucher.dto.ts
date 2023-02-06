@@ -8,7 +8,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { IsEndTime, IsStartTime } from '../../common/custom-validator.dto';
+import { IsEndTime, IsStartTime } from '../../shared/custom-validator.dto';
 
 export class CreateVoucherDto {
   @ApiProperty({ type: Date })

@@ -96,6 +96,12 @@ export class CategorysController {
     example: STATUS_ENUM.ACTIVE,
   })
   @ApiQuery({ name: 'prioriry', type: Number, required: false, example: 1 })
+  @ApiQuery({
+    name: 'categoryName',
+    type: String,
+    required: false,
+    example: 'Smartphone',
+  })
   @ApiQuery({ name: 'page', type: Number, required: false, example: 1 })
   @ApiQuery({ name: 'perPage', type: Number, required: false, example: 25 })
   @ApiQuery({
