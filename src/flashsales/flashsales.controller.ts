@@ -38,6 +38,7 @@ import {
 import { FlashSaleSwangger } from './dto/swangger/flash-sale-swangger.dto';
 import { STATUS_ENUM } from '../shared/constants';
 import { IFlashSaleModel } from './flashsale.schema';
+import { StatusRespone } from 'src/shared/respone.dto';
 
 @ApiTags('flashsales')
 @ApiBearerAuth()
@@ -71,7 +72,7 @@ export class FlashsalesController {
     return this.flashsalesService.create(createFlashsaleDto);
   }
 
-  //
+  // [GET] api/ecommerce/v1/flashsales
   @ApiOkResponse({
     type: [FlashSaleSwangger],
     description: 'Return list flash sale',
@@ -86,7 +87,6 @@ export class FlashsalesController {
   @ApiQuery({ name: 'name', type: String, required: false })
   @ApiQuery({ name: 'itemID', type: String, required: false })
   @ApiQuery({ name: 'startTime', type: Date, required: false })
-  @ApiQuery({ name: 'endTime', type: Date, required: false })
   @ApiQuery({
     name: 'status',
     enum: STATUS_ENUM,
@@ -99,12 +99,13 @@ export class FlashsalesController {
     required: false,
     example: 'desc',
   })
+  @Roles(USERS_ROLE_ENUM.ADMIN, USERS_ROLE_ENUM.USER)
   @Get()
   getList(@Query() query) {
     return this.flashsalesService.getList(query);
   }
 
-  //
+  // [PATCH] api/ecommerce/v1/flashsales/:id
   @ApiOkResponse({
     type: FlashSaleSwangger,
     description: 'Return flash sale updated',
@@ -114,6 +115,7 @@ export class FlashsalesController {
     description: 'Time update exists',
   })
   @Patch(':id')
+  @Roles(USERS_ROLE_ENUM.ADMIN)
   update(
     @Param('id') id: string,
     @Body() updateFlashsaleDto: UpdateFlashsaleDto,
@@ -122,9 +124,10 @@ export class FlashsalesController {
   }
 
   // [DELETE]
-  @ApiOkResponse({ type: Boolean, description: 'return boolean' })
+  @ApiOkResponse({ type: StatusRespone })
+  @Roles(USERS_ROLE_ENUM.ADMIN)
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<boolean> {
+  remove(@Param('id') id: string) {
     return this.flashsalesService.remove(id);
   }
 }

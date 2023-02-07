@@ -93,54 +93,30 @@ export class FlashsalesService {
   }
 
   async getList(query) {
-    const {
-      page,
-      perPage,
-      sortBy,
-      sortType,
-      name,
-      itemID,
-      startTime,
-      endTime,
-    } = query;
+    const { page, perPage, sortBy, sortType, status, name, itemID, startTime } =
+      query;
     const options: { [k: string]: any } = {
       sort: { [sortBy]: sortType },
       limit: perPage || Standard.PER_PAGE,
       page: page || Standard.PAGE,
-      select: '-password',
     };
 
     const andFilter: { [k: string]: any } = [];
     if (name) {
       andFilter.push({ name });
     }
+    if (status) {
+      andFilter.push({ status });
+    }
     if (startTime) {
-      andFilter.push({ startTime: { $gt: startTime } });
+      andFilter.push({ startTime: { $gte: startTime } });
     }
-    if (endTime) {
-      andFilter.push({ endTime: { $gt: endTime } });
-    }
-    const filters = andFilter.length > 0 ? { $and: andFilter } : {};
-
-    const values = await this.flashsaleRepository.paginate(filters, options);
     if (itemID) {
-      const data: { [k: string]: any } = {};
-      const listFlashSaleFinByItemID = values.docs.map((flashSale) => {
-        const data = [];
-        if (flashSale.items.includes(itemID)) {
-          data.push(flashSale);
-        }
-        return data;
-      });
-      data.docs = listFlashSaleFinByItemID;
-      data.totalDocs = values.totalDocs;
-      data.limit = values.limit;
-      data.totalPages = values.totalPages;
-      data.page = values.page;
-      data.pagingCounter = values.pagingCounter;
-      return data;
+      andFilter.push({ 'items.itemId': { $eq: itemID } });
     }
-    return values;
+
+    const filters = andFilter.length > 0 ? { $and: andFilter } : {};
+    return this.flashsaleRepository.paginate(filters, options);
   }
 
   find(filterQuery: FilterQuery<FlashSaleDocument>): Promise<IFlashSale[]> {
@@ -169,7 +145,6 @@ export class FlashsalesService {
       const flashSaleConflic = await this.flashsaleRepository.findOne({
         startTime: { $gt: startTimeUpdate },
         endTime: { $lt: endTimeUpdate },
-        status: STATUS_FLASHSALE_ENUM.ACTIVE,
       });
       if (flashSaleConflic)
         throw new ConflictException(
@@ -196,7 +171,23 @@ export class FlashsalesService {
     );
   }
 
-  remove(id: string): Promise<boolean> {
-    return this.flashsaleRepository.deleteMany({ _id: id });
+  async remove(id: string) {
+    const dateNow = new Date().toISOString();
+
+    try {
+      const flashSale = await this.flashsaleRepository.findOne({
+        $and: [
+          { _id: id },
+          { startTime: { $lte: dateNow } },
+          { endTime: { $gte: dateNow } },
+        ],
+      });
+      if (flashSale) {
+        throw new BadRequestException('Can not delete');
+      }
+      return { success: true };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 }
