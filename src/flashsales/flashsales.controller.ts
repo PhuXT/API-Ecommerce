@@ -37,11 +37,11 @@ import {
 } from '../swangger/swangger.dto';
 import { FlashSaleSwangger } from './dto/swangger/flash-sale-swangger.dto';
 import { STATUS_ENUM } from '../shared/constants';
+import { IFlashSaleModel } from './flashsale.schema';
 
 @ApiTags('flashsales')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(USERS_ROLE_ENUM.ADMIN)
 @Controller('flashsales')
 @ApiInternalServerErrorResponse({
   type: InternalServerErrorExceptionDto,
@@ -54,6 +54,7 @@ export class FlashsalesController {
   constructor(private readonly flashsalesService: FlashsalesService) {}
 
   // [POST] api/ecommerce/v1/flashsales
+  @Roles(USERS_ROLE_ENUM.ADMIN)
   @ApiCreatedResponse({
     type: FlashSaleSwangger,
     description: 'Flash sale created',
@@ -64,7 +65,9 @@ export class FlashsalesController {
       'startTime < Date.now or startTime > endTime, discount invalid, itemId not exist, stocks >= flashSaleQuantity  ',
   })
   @Post()
-  create(@Body() createFlashsaleDto: CreateFlashsaleDto): Promise<IFlashSale> {
+  create(
+    @Body() createFlashsaleDto: CreateFlashsaleDto,
+  ): Promise<IFlashSaleModel> {
     return this.flashsalesService.create(createFlashsaleDto);
   }
 

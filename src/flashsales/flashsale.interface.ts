@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { STATUS_FLASHSALE_ENUM } from './flashsale.constain';
 
 export interface IFlashSale {
@@ -10,7 +9,7 @@ export interface IFlashSale {
 }
 
 export interface IFlashSaleItemInfor {
-  itemId: mongoose.Schema.Types.ObjectId | string;
+  itemId: string;
   flashSaleQuantity: number;
   discount: number;
 }

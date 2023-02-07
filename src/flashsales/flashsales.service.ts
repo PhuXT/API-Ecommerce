@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   forwardRef,
   Inject,
@@ -7,7 +8,7 @@ import {
 import { FilterQuery } from 'mongoose';
 import { IFlashSale } from './flashsale.interface';
 import { STATUS_FLASHSALE_ENUM } from './flashsale.constain';
-import { FlashSaleDocument } from './flashsale.schema';
+import { FlashSaleDocument, IFlashSaleModel } from './flashsale.schema';
 import { FlashSaleRepository } from './flashsales.repository';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { UsersService } from '../users/users.service';
@@ -25,9 +26,45 @@ export class FlashsalesService {
     @Inject(forwardRef(() => ItemsService)) private itemsService: ItemsService,
   ) {}
 
-  async create(createFlashsaleDto: IFlashSale): Promise<IFlashSale> {
-    const flashSale = await this.flashsaleRepository.create(createFlashsaleDto);
-    return flashSale;
+  async create(createFlashsaleDto: IFlashSale): Promise<IFlashSaleModel> {
+    try {
+      for (const item of createFlashsaleDto.items) {
+        const itemInfos = await this.itemsService.findOneOrigin(item.itemId);
+        if (!itemInfos) {
+          throw new BadRequestException('Item doesnt exist');
+        }
+        if (itemInfos.stocks < item.flashSaleQuantity) {
+          throw new BadRequestException(
+            `quantity of ${item.itemId} in stock must be less than product flash sale`,
+          );
+        }
+      }
+      const dateNow = new Date();
+      const listFlashSaleConflix = await this.flashsaleRepository.find({
+        $and: [{ startTime: { $gt: dateNow } }],
+      });
+      for (const flashSale of listFlashSaleConflix) {
+        if (
+          (flashSale.startTime.getTime() <=
+            new Date(createFlashsaleDto.startTime).getTime() &&
+            new Date(createFlashsaleDto.startTime).getTime() <=
+              flashSale.endTime.getTime()) ||
+          (flashSale.startTime.getTime() <=
+            new Date(createFlashsaleDto.endTime).getTime() &&
+            new Date(createFlashsaleDto.endTime).getTime() <=
+              flashSale.endTime.getTime())
+        ) {
+          throw new BadRequestException(
+            'There existed flash sales during this time',
+          );
+        }
+      }
+
+      return this.flashsaleRepository.create(createFlashsaleDto);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+
     // send mail cronjob-------------------------
     // const startTime = createFlashsaleDto.startTime;
     // const conJobTime = new Date(startTime).getTime() - 3 * 60 * 1000;

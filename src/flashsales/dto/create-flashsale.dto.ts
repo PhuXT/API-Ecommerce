@@ -12,14 +12,13 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import mongoose from 'mongoose';
 import { IsEndTime, IsStartTime } from '../../shared/custom-validator.dto';
 import { STATUS_FLASHSALE_ENUM } from '../flashsale.constain';
 
 class flashSaleItemInfor {
   @ApiProperty()
   @IsString()
-  itemId: mongoose.Schema.Types.ObjectId | string;
+  itemId: string;
 
   @ApiProperty()
   @IsNotEmpty()

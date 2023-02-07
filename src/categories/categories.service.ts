@@ -9,7 +9,6 @@ import { ItemsService } from '../items/items.service';
 import { STATUS_ENUM } from './categories.constant';
 import { CategoriesRepository } from './categories.repository';
 import { ICategory } from './categories.interface';
-import { UpdateOrderDto } from 'src/orders/dto/update-order.dto';
 
 @Injectable()
 export class CategorysService {

@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import mongoose from 'mongoose';
@@ -36,11 +37,13 @@ export class ItemDto {
   @ApiProperty({ required: true, type: Number })
   @IsNotEmpty()
   @IsNumber()
+  @Min(1)
   cost: number;
 
   @ApiProperty({ required: true, type: Number })
   @IsNotEmpty()
   @IsNumber()
+  @Min(1)
   price: number;
 
   @ApiProperty({ required: true, type: Number })
