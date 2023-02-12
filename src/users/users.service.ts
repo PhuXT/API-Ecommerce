@@ -91,7 +91,7 @@ export class UsersService {
 
     let userID;
     let dataUpdate;
-    if (query.userID) {
+    if (query.userID && request.user.userID !== query.userID) {
       if (request.user.userRole !== USERS_ROLE_ENUM.ADMIN) {
         throw new UnauthorizedException('Unauthorized');
       }

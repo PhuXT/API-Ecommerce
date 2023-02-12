@@ -181,11 +181,11 @@ export class OrdersService {
       andFilter.push({ 'items.name': { $eq: itemName } });
     }
     if (userID) {
-      andFilter.push({ 'items.userId': { $eq: userID } });
+      andFilter.push({ 'user.userId': { $eq: userID } });
     }
 
     if (request.user.userRole === USERS_ROLE_ENUM.USER) {
-      andFilter.push({ 'items.userId': { $eq: request.user.userID } });
+      andFilter.push({ 'user.userId': { $eq: request.user.userID } });
     }
     const filters = andFilter.length > 0 ? { $and: andFilter } : {};
     const data = await this.ordersRepositoty.paginate(filters, options);
@@ -197,10 +197,8 @@ export class OrdersService {
     if (!orders) {
       throw new BadRequestException('Order does not exist');
     }
-    if (
-      orders.user.userId.toString() !== id ||
-      request.user.userRole !== USERS_ROLE_ENUM.ADMIN
-    ) {
+
+    if (orders.user.userId.toString() !== request.user.userID) {
       throw new BadRequestException('you can only view your order');
     }
     if (
