@@ -45,11 +45,11 @@ import { StatusRespone } from 'src/shared/respone.dto';
   type: InternalServerErrorExceptionDto,
   description: 'Server error',
 })
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class ItemsController {
   constructor(private readonly itemsService: ItemsService) {}
 
   // [POST] /api/ecommerce/v1/items
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiCreatedResponse({
     type: ItemSwangger,
     description: 'return item created',
@@ -98,6 +98,7 @@ export class ItemsController {
   }
 
   // [PATCH] /api/ecommerce/v1/items/:itemID
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOkResponse({ type: ItemSwangger, description: 'return item updated' })
   @ApiConflictResponse({
     type: ConFlictExceptionDto,
@@ -111,6 +112,7 @@ export class ItemsController {
   }
 
   // [DELETE] /api/ecommerce/v1/items/:itemID
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOkResponse({ type: StatusRespone })
   @ApiBadRequestResponse({
     type: BadRequestDto,

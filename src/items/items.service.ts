@@ -88,6 +88,7 @@ export class ItemsService {
       this.flashsalesService.findFlashSaleNow(),
     ]).then((value) => {
       const [listItems, flashSaleNow] = value;
+
       const listItemsUpdateFlashSale = listItems.docs.map((item) =>
         this.getItemFlashSale(item, flashSaleNow),
       );
@@ -111,7 +112,8 @@ export class ItemsService {
     ])
       .then((value) => {
         const [item, flashSaleNow] = value;
-        return this.getItemFlashSale(item, flashSaleNow);
+
+        return this.getItemFlashSale(item['_doc'], flashSaleNow);
       })
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch((errr) => {
@@ -161,7 +163,7 @@ export class ItemsService {
   //
   getItemFlashSale(item: IItemModel, flashSaleNow): IItems {
     if (flashSaleNow && item) {
-      const itemWithFlashSale = { ...item['_doc'] };
+      const itemWithFlashSale = item;
       flashSaleNow.items.forEach((itemFlashSale) => {
         if (itemFlashSale.itemId.toString() === item['_id'].toString()) {
           itemWithFlashSale['flashSalePrice'] =
@@ -174,6 +176,7 @@ export class ItemsService {
             itemFlashSale.flashSaleQuantity;
         }
       });
+
       return itemWithFlashSale;
     }
     return item;

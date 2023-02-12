@@ -34,6 +34,7 @@ import {
 } from '../swangger/swangger.dto';
 import { OrderSwanggerDto } from './dto/swangger/order-swangger.dto';
 import { IOrderModel } from './order.schema';
+import { Request } from '@nestjs/common/decorators';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -66,16 +67,23 @@ export class OrdersController {
   }
 
   // [GET] get list
-  @ApiOkResponse({ type: [OrderSwanggerDto] })
-  @Roles(USERS_ROLE_ENUM.ADMIN)
+  @ApiOkResponse()
+  @Roles(USERS_ROLE_ENUM.ADMIN, USERS_ROLE_ENUM.USER)
   @ApiOperation({
     operationId: 'GetListOrders',
     description: 'Get list ',
   })
   @ApiQuery({ name: 'page', type: Number, required: false, example: 1 })
   @ApiQuery({ name: 'perPage', type: Number, required: false, example: 25 })
-  @ApiQuery({ name: 'sortBy', type: String, required: false })
+  @ApiQuery({
+    name: 'sortBy',
+    type: String,
+    required: false,
+    example: 'totalPrice',
+  })
   @ApiQuery({ name: 'orderID', type: String, required: false })
+  @ApiQuery({ name: 'itemName', type: String, required: false })
+  @ApiQuery({ name: 'userName', type: String, required: false })
   @ApiQuery({ name: 'userID', type: String, required: false })
   @ApiQuery({ name: 'status', type: String, required: false })
   @ApiQuery({ name: 'createdAt', type: Date, required: false })
@@ -86,26 +94,11 @@ export class OrdersController {
     example: 'desc',
   })
   @Get()
-  getList(@Query() query) {
-    return this.ordersService.getList(query);
-  }
-
-  // [GET] findOne
-  @ApiOkResponse({ type: OrderSwanggerDto })
-  @ApiBadRequestResponse({
-    type: BadRequestDto,
-    description: 'Only get your order',
-  })
-  @Roles(USERS_ROLE_ENUM.ADMIN, USERS_ROLE_ENUM.USER)
-  @Get(':id')
-  findOne(@Param('id') idOrder: string, @Req() req) {
-    console.log(req.user);
-
-    return this.ordersService.findOne(req.user.userID, idOrder);
+  getList(@Query() query, @Request() request) {
+    return this.ordersService.getList(request, query);
   }
 
   // [UPDATE]
-
   @ApiOkResponse({ type: String })
   @ApiBadRequestResponse({
     type: BadRequestDto,
@@ -121,7 +114,7 @@ export class OrdersController {
   @ApiOkResponse({ type: Boolean })
   @Roles(USERS_ROLE_ENUM.ADMIN)
   @Delete(':id')
-  delete(@Param('id') id: string): Promise<boolean> {
+  delete(@Param('id') id: string) {
     return this.ordersService.delete(id);
   }
 }

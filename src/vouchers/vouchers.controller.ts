@@ -38,6 +38,7 @@ import {
   NotFoundExceptionDto,
   UnauthorizedExceptionDto,
 } from '../swangger/swangger.dto';
+import { StatusRespone } from 'src/shared/respone.dto';
 
 @ApiTags('vouchers')
 @ApiInternalServerErrorResponse({
@@ -77,7 +78,7 @@ export class VouchersController {
   // [GET] get List
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(USERS_ROLE_ENUM.ADMIN, USERS_ROLE_ENUM.USER)
+  @Roles(USERS_ROLE_ENUM.ADMIN)
   @ApiOkResponse({
     description: 'Return list voucher',
   })
@@ -93,9 +94,7 @@ export class VouchersController {
   @ApiQuery({ name: 'perPage', type: Number, required: false, example: 25 })
   @ApiQuery({ name: 'sortBy', type: String, required: false })
   @ApiQuery({ name: 'startTime', type: Date, required: false })
-  @ApiQuery({ name: 'endTime', type: Number, required: false })
   @ApiQuery({ name: 'discount', type: String, required: false })
-  @ApiQuery({ name: 'categories', type: String, required: false })
   @ApiQuery({ name: 'nameVoucher', type: String, required: false })
   @ApiQuery({ name: 'code', type: String, required: false })
   @ApiQuery({
@@ -109,36 +108,11 @@ export class VouchersController {
     return this.vouchersService.getList(query);
   }
 
-  // [GET] find one
-  @ApiOkResponse({
-    type: VoucherSwanggerDto,
-    description: 'Return voucher finded by id',
-  })
-  @ApiUnauthorizedResponse({
-    type: UnauthorizedExceptionDto,
-    description: 'Need to login',
-  })
-  @ApiBadRequestResponse({
-    type: BadRequestDto,
-    description: 'Id must format ObjId',
-  })
-  @ApiNotFoundResponse({
-    type: NotFoundExceptionDto,
-    description: 'voucher does not exist',
-  })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(USERS_ROLE_ENUM.ADMIN, USERS_ROLE_ENUM.USER)
-  @Get(':voucherId')
-  findOne(@Param('voucherId') voucherId: string): Promise<IVoucher> {
-    return this.vouchersService.findOne(voucherId);
-  }
-
   // [PATCH]
   @ApiOkResponse({ type: VoucherSwanggerDto })
   @ApiUnauthorizedResponse({
     type: UnauthorizedExceptionDto,
-    description: 'need to login with admin rights',
+    description: 'login as administrator',
   })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -151,7 +125,8 @@ export class VouchersController {
     return this.vouchersService.update(voucherId, updateVoucherDto);
   }
 
-  @ApiOkResponse({ type: Boolean })
+  // [DELETE]
+  @ApiOkResponse({ type: StatusRespone })
   @ApiUnauthorizedResponse({
     type: UnauthorizedExceptionDto,
     description: 'need to login with admin rights',
@@ -160,7 +135,7 @@ export class VouchersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(USERS_ROLE_ENUM.ADMIN)
   @Delete(':voucherId')
-  remove(@Param('voucherId') voucherId: string): Promise<boolean> {
+  remove(@Param('voucherId') voucherId: string) {
     return this.vouchersService.remove(voucherId);
   }
 }

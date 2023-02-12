@@ -13,7 +13,7 @@ import { FlashSaleRepository } from './flashsales.repository';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { UsersService } from '../users/users.service';
 import { EmailsService } from '../emails/emails.service';
-import { Standard } from '../shared/constants';
+import { Standard, STATUS_ENUM } from '../shared/constants';
 import { ItemsService } from 'src/items/items.service';
 
 @Injectable()
@@ -180,11 +180,13 @@ export class FlashsalesService {
           { _id: id },
           { startTime: { $lte: dateNow } },
           { endTime: { $gte: dateNow } },
+          { status: STATUS_ENUM.ACTIVE },
         ],
       });
       if (flashSale) {
         throw new BadRequestException('Can not delete');
       }
+      await this.flashsaleRepository.deleteMany({ _id: id });
       return { success: true };
     } catch (error) {
       throw new BadRequestException(error.message);

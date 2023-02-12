@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Standard } from '../shared/constants';
+import { Standard, STATUS_ENUM } from '../shared/constants';
 import { FlashsalesService } from '../flashsales/flashsales.service';
 import { ItemsService } from '../items/items.service';
 import { UsersService } from '../users/users.service';
 import { VouchersService } from '../vouchers/vouchers.service';
-import { CreateItemOrder, IOrder, UserOrder } from './entities/order.entity';
+import { CreateItemOrder, UserOrder } from './entities/order.entity';
 import { OrdersRepository } from './order.repository';
 import { IOrderModel } from './order.schema';
 import { ORDER_STATUS_ENUM } from './orders.constain';
@@ -20,40 +20,31 @@ export class OrdersService {
     private readonly itemService: ItemsService,
   ) {}
 
+  // [CREATE]
   async create(userInfor, createOrderDto): Promise<IOrderModel> {
-    // user Order
-
     const user: UserOrder = createOrderDto.user;
     user.userId = userInfor.userID;
     user.userName = userInfor.userName;
 
-    // Check List Item Order
     const listItem = createOrderDto.items.map(async (itemOrderDto) => {
-      let itemDtail = await this.itemService.findOne(
-        itemOrderDto.itemId,
-        // itemOrderDto.itemId.toString(),
-      );
-
-      // Check Stocks Item
+      let itemDtail = await this.itemService.findOne(itemOrderDto.itemId);
       if (itemDtail.stocks < itemOrderDto.amount) {
         throw new BadRequestException(
-          `${itemDtail.name} does not have enough inventory`,
+          `${itemDtail.name} not in sufficient quantity`,
         );
       }
 
-      let createItemOrder: CreateItemOrder = { ...itemDtail };
+      let createItemOrder: CreateItemOrder = itemDtail;
       let flashSaleQuantityUpdate = null;
 
       // check flashSale quantity
-      if (itemDtail.flashSaleQuantity) {
+
+      if (itemDtail?.flashSaleQuantity) {
         flashSaleQuantityUpdate =
           itemDtail.flashSaleQuantity - itemOrderDto.amount;
 
         if (itemDtail.flashSaleQuantity < itemOrderDto.amount) {
-          itemDtail = await this.itemService.findOneOrigin(
-            // itemOrderDto.itemId.toString(),
-            itemOrderDto.itemId,
-          );
+          itemDtail = await this.itemService.findOneOrigin(itemOrderDto.itemId);
           createItemOrder = { ...itemDtail['_doc'] };
           flashSaleQuantityUpdate = null;
         }
@@ -64,7 +55,6 @@ export class OrdersService {
       createItemOrder.amountOrder = itemOrderDto.amount;
       createItemOrder.totalPrice = itemDtail.price * itemOrderDto.amount;
       createItemOrder.originPrice = itemDtail.price * itemOrderDto.amount;
-
       //update createItemOrder.totalPrice if exist flashSale
       if (itemDtail.flashSalePrice) {
         createItemOrder.flashSaleId = itemDtail.flashSaleId;
@@ -72,7 +62,6 @@ export class OrdersService {
           itemDtail.flashSalePrice * itemOrderDto.amount;
       }
 
-      // Check voucher
       if (createOrderDto.voucherCode) {
         const voucher = await this.voucherService.findVoucherNow(
           createOrderDto.voucherCode,
@@ -100,7 +89,6 @@ export class OrdersService {
           createItemOrder.totalPrice -
           (createItemOrder.totalPrice * voucher.discount) / 100;
       }
-
       return createItemOrder;
     });
 
@@ -155,7 +143,7 @@ export class OrdersService {
     return orderCreated;
   }
 
-  async getList(query) {
+  async getList(request, query) {
     const {
       page,
       perPage,
@@ -165,6 +153,8 @@ export class OrdersService {
       userID,
       status,
       createdAt,
+      userName,
+      itemName,
     } = query;
 
     const options: { [k: string]: any } = {
@@ -182,41 +172,24 @@ export class OrdersService {
     }
 
     if (createdAt) {
-      andFilter.push({ createdAt: { $gt: createdAt } });
+      andFilter.push({ createdAt: { $gte: createdAt } });
+    }
+    if (userName) {
+      andFilter.push({ 'user.userName': { $eq: userName } });
+    }
+    if (itemName) {
+      andFilter.push({ 'items.name': { $eq: itemName } });
+    }
+    if (userID) {
+      andFilter.push({ 'items.userId': { $eq: userID } });
+    }
+
+    if (request.user.userRole === USERS_ROLE_ENUM.USER) {
+      andFilter.push({ 'items.userId': { $eq: request.user.userID } });
     }
     const filters = andFilter.length > 0 ? { $and: andFilter } : {};
     const data = await this.ordersRepositoty.paginate(filters, options);
-    if (userID) {
-      const datalistOrFindbyID: { [k: string]: any } = {};
-
-      data.docs.forEach((order) => {
-        const listOrFindbyID = [];
-
-        if (order.user.userId.toString() === userID) {
-          listOrFindbyID.push(order);
-          datalistOrFindbyID.docs = listOrFindbyID;
-          datalistOrFindbyID.totalDocs = data.totalDocs;
-          datalistOrFindbyID.limit = data.limit;
-          datalistOrFindbyID.totalPages = data.totalPages;
-          datalistOrFindbyID.page = data.page;
-          datalistOrFindbyID.pagingCounter = data.pagingCounter;
-        }
-      });
-      return datalistOrFindbyID;
-    }
-
     return data;
-  }
-
-  async findOne(userId: string, orderId: string): Promise<IOrderModel> {
-    const order = await this.ordersRepositoty.findOne({ _id: orderId });
-    if (!order) {
-      throw new BadRequestException('order does not exist');
-    }
-    if (order.user.userId.toString() !== userId) {
-      throw new BadRequestException('you can only view your order');
-    }
-    return order;
   }
 
   async update(id: string, request): Promise<string> {
@@ -225,7 +198,7 @@ export class OrdersService {
       throw new BadRequestException('Order does not exist');
     }
     if (
-      orders.user.userId.toString() !== id &&
+      orders.user.userId.toString() !== id ||
       request.user.userRole !== USERS_ROLE_ENUM.ADMIN
     ) {
       throw new BadRequestException('you can only view your order');
@@ -236,8 +209,8 @@ export class OrdersService {
     ) {
       throw new BadRequestException('You dont cancel this orders');
     }
-    const arrUpdate = [];
 
+    const arrUpdate = [];
     const updateStatusOrder = this.ordersRepositoty.findOneAndUpdate(
       { _id: id },
       { status: ORDER_STATUS_ENUM.CANCEL },
@@ -275,7 +248,12 @@ export class OrdersService {
     return `Order cancel`;
   }
 
-  delete(id: string): Promise<boolean> {
-    return this.ordersRepositoty.deleteMany({ _id: id });
+  async delete(id: string) {
+    try {
+      await this.ordersRepositoty.deleteMany({ _id: id });
+      return { sucess: true };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 }

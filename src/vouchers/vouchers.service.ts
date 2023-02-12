@@ -47,7 +47,6 @@ export class VouchersService {
       sortBy,
       sortType,
       startTime,
-      endTime,
       discount,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       categories,
@@ -62,10 +61,7 @@ export class VouchersService {
 
     const andFilter: { [k: string]: any } = [];
     if (startTime) {
-      andFilter.push({ startTime: { $gt: startTime } });
-    }
-    if (endTime) {
-      andFilter.push({ endTime: { $gt: endTime } });
+      andFilter.push({ startTime: { $gte: startTime } });
     }
     if (discount) {
       andFilter.push({ discount });
@@ -106,23 +102,19 @@ export class VouchersService {
       code: voucherCode,
     });
   }
+  //
   async update(id: string, updateVoucherDto: UpdateVoucherDto) {
     try {
-      const a = await this.voucherRepository.findOneAndUpdate(
+      await this.voucherRepository.findOneAndUpdate(
         {
           _id: id,
         },
         updateVoucherDto,
       );
+      return { success: true };
     } catch (error) {
-      console.log(error);
+      throw new BadRequestException(error.message);
     }
-    return this.voucherRepository.findOneAndUpdate(
-      {
-        _id: id,
-      },
-      updateVoucherDto,
-    );
   }
 
   updateQuantity(id: string, quantityUpdate: number) {
@@ -132,7 +124,8 @@ export class VouchersService {
     );
   }
 
-  remove(id: string): Promise<boolean> {
-    return this.voucherRepository.deleteMany({ _id: id });
+  async remove(id: string) {
+    await this.voucherRepository.deleteMany({ _id: id });
+    return { success: true };
   }
 }
